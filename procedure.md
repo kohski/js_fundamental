@@ -385,13 +385,54 @@ eval(str);
 ---
 ## Chapter4 関数
 ### 関数基礎
+```js
+// 基本形
+function getTriangle(base, height){
+  return base * height / 2
+}
+// functionオブジェクトのコンストラクタを生成する形も一応可能
+let getTriangle2 = new Function('base','height','return base * height /2;');
+// Topレベルオブジェクトっぽいこともいける
+let getTriangle3 = Function('base','height','return base * height /2;');
+// 関数リテラル(無名関数)
+let getTriangle4 = function(base, height){
+  return base * height /2 
+}
+// アロー関数
+let getTriangle5 = (base, height)=>{
+  return base * height /2 
+}
 
-
+// 特殊ルール
+// 1.return だけなら{}省略可
+getTriangle6 = (base,height) => base * height /2
+getTriangle7 = radius =>{
+  return Math.floor(radius ** 2 * Math.PI)
+}
+```
 ### 関数定義の注意点
+- 改行注意
+- function命令は静的な構造
+  要はコンパイル時に読み込まれているので、いざそのステートメントが
+  定義されている場所よりも上で呼び出しても問題なし
+```js
+getTriangle(5,10) // <=errorにならない
 
+function getTriangle(base, height){
+  return base * height /2;
+}
+```
+- 関数リテラル/functionコンストラクタは実行時に評価
+```js
+// 関数リテラル
+let func = function(){}
+// コンストラクタ
+let func = new Function()
+```
 
 ### スコープ
-
+- var / letつけないとGlobalScopeになる
+- letはブロックスコープ。let前までは即時関数を使っていた
 
 ### 引数の記法
 
