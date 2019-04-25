@@ -439,17 +439,263 @@ let func = new Function()
 - 名前つき引数は{} でうけとって処理
 
 ### ES2015
-
+- ...Rest演算子
+- 再帰処理(recursive)について（階乗）
+  ```js
+  function factorial(n){
+    if(n != 0){
+      return n * factorial(n-1);
+    }
+    return 1;
+  }
+  console.log(factorial(5));
+  ```
+- 高階関数(heigher order)
+  要はコールバックに関数指定するのと同じ
 
 ### 高度なテーマ
-
-
+- tagged template
+  第一引数に、${}で区切られたテキストが配列として、
+  第二引数以降に${}がもらえる
+  ```js
+  function_name() // じゃなくて、
+  function_name`template_${literal}`
+  ```
+- closure
+関数は定義時のコンテキストを記憶する
+closure定義時にreturn以下のコールバック関数は定義されており、
+その上位概念のcounterと言う変数を記憶する
+```js
+function closure(init){
+  var counter = init;
+  
+  return function(){
+    return ++counter;
+  }
+}
+var myClosure = closure(1);
+console.log(myClosure()); // => 2
+console.log(myClosure()); // => 3
+console.log(myClosure()); // => 4
+```
 
 ---
 ## Chapter5 大規模開発向けの書き方
+### prototype
+- JSではfunctionを用いたprototypeでオブジェクト指向を表現
+```js
+let Member = function(firstName, lastName){
+  this.firstName = firstName;
+  this.lastName = lastName;
+  this.getName = function(){
+    return this.lastName + ' ' + this.firstName;
+  }
+}
+```
+#### thisの文脈による参照元の変化
+- top level --- Global Object
+- function --- Global Object
+- call/apply --- 引数で指定されたオブジェクト
+- EventListener --- イベントの発生元
+- Constructor --- 生成したインスタンス
+- method --- レシーバオブジェクト
+
+#### singletonメソッド類似の概念もあり
+#### グローバル関数として呼び出してしまうと...
+```js
+let Member = function(firstName, lastName){
+  this.firstName = firstName;
+  this.lastName = lastName;
+};
+
+let m = Member('Yoko','Miyamoto');
+console.log(m);
+console.log(firstName);
+firstName
+// functionとして呼び出すと、thisはグローバルオブジェクトを指し示す。
+// ということで、firstNameはグローバル変数になってしまう。
+// console.log(m.firstName);
+```
+
+よって、thisがMemberのインスタンスかどうかを確認
+```js
+let Member = function(firstName, lastName){
+  // ここを加えるとthisがMemberのインスタンスならって条件分岐ができる
+  if(!(this instanceof Member)){
+    return new Member(firstName, lastName);
+  }
+  this.firstName = firstName;
+  this.lastName = lastName;
+};
+```
+### コンストラクタの問題点
+constructorで宣言されたクラスをそのまま使うと、メソッドなども丸々コピーされるので、
+メモリを食い過ぎる。
+ということで、protptypeオブジェクトに書き込むとそれを暗黙的に参照するようになる。
+  ```js
+  let Member = function(firstName, lastName){
+    this.firstName = firstName,
+    this.lastName = lastName
+  };
+
+  Member.prototype.getName = function(){
+    return this.lastName + ' ' + this.firstName
+  };
+
+  //mem自身の特異メソッドを検索=>なければprototypeオブジェクトを参照
+  let mem = new Member('Miyamoto','Yoko');
+  console.log(mem.getName());
+  ```
+JSのクラスは動的なので、インスタンス生成後にメソッドを定義しても問題なく
+以前生成したインスタンスから参照可能
+  ```js
+  let Member = function(firstName, lastName){
+    this.firstName = firstName
+    this.lastName = lastName
+  }
+  let mem = new Member('Yoko','Miyamoto');
+  // インスタンス生成後にprototypeオブジェクトにメソッドを追加
+  Member.prototype.getName = function(){
+    return this.lastName + ' ' + this.firstName;
+  };
+  // インスタンスへのコピーではなくprototypeオブジェクトへの暗黙の参照なので
+  // インスタンスから問題なく参照できている
+  console.log(mem.getName());
+  ```
+同名のメソッドとプロパティが定義可能
+プロパティの方が探索ツリーで先に解決されるけど、
+ややこしいので、propertyはコンストラクタで、
+メソッドはprototypeで定義するのが吉
+ちなみに、プロパティをdeleteで削除しても、
+同名のメソッドをprotptypeに探しに行ったりしないので削除は問題なし。
+  ```js
+  var Member = function(){};
+  // methodでgenderを設定
+  Member.prototype.gender = 'male';
+  let mem1 = new Member();
+  let mem2 = new Member();
+  console.log(mem1.gender + '|' + mem2.gender);
+  // instanceにprppertyを設定
+  mem2.gender = 'female';
+  // mem2については、instanceに着いたgender propertyが先に探索されて
+  // 表示された。
+  console.log(mem1.gender + '|' + mem2.gender);
+  ```
+prototypeはインスタンスに個別に書くより、クラスに直接書く方が完結なので
+そっちがおすすめ
+  ```js
+  let Member = function(firstName, lastName){
+    this.firstName = firstName
+    this.lastName = lastName
+  }
+  // Member.prototype.getName() = function(){
+  //   return this.firstName + this.lastName
+  // }
+  // Member.prototype.toString = function(){
+  //   return this.lastName + this.firstName
+  // }
+
+  // 上と同じ意味だけどこっちの方がスッキリ！
+  Member.prototype = {
+    getName: function(){
+      return this.firstName + this.lastName
+    },
+    toString: function(){
+      return this.lastName + this.firstName
+    }
+  }
+  ```
+静的メソッド（＝クラスメソッド）はクラスに直接定義
+  ```js
+  let Area = function(){};
+  Area.triangle = function(base, height){
+    return base * height / 2 ;
+  };
+  console.log(Area.triangle(5,4));
+  ```
+
+### オブジェクトの継承
+prototypeの継承については、以下の通り。
+  ```js
+  let Animal = function(){};
+  Animal.prototype = {
+    walk:function(){
+      console.log('nosso... nosso...');
+    }
+  };
+  let Dog = function(){
+    Animal.call(this);
+  };
+  Dog.prototype = new Animal();
+  Dog.prototype.bark = function(){
+    console.log('bow wow');
+  };
+  let d = new Dog();
+  d.walk();
+  d.bark();
+  ```
+以下の2行がみそ！
+子クラスのprototypeオブジェクトに親クラス自体を代入する
+  ```js
+  let Dog = function(){
+    Animal.call(this);
+  };
+  Dog.prototype = new Animal();
+  ```
+ちなみに、JSは動的なクラス設計なので、インスタンス生成後から
+変えることが可能という...
+  ```js
+  let Dog = function(){};
+  Dog.prototype = new Animal();
+  let d1 = new Dog();
+  console.log(d1.walk()); //=> nosso...nosso...
+
+  Dog.prototype = new SuperAnimal();
+  let d2 = new Dog();
+  console.log(d2.walk()); //=>dadadada...
+  ```
+継承関係を整理したいときのメソッド一覧
+  ```js
+  imal = function(){};
+  let Hamster = function(){};
+  Hamster.prototype = new Animal();
+
+  let a = new Animal();
+  let h = new Hamster();
+
+  // constructorメソッドでコンストラクタを取得できるが
+  console.log(a.constructor === Animal);
+  //以下二つより、継承先で生成されたインスタンスでも、
+  //constructorメソッドで取得できるのは親クラス
+  console.log(h.constructor === Animal);
+  console.log(h.constructor === Hamster);
+
+  //isntanceofはprototypeチェーンを遡って確認する
+  console.log(h instanceof Animal);
+  console.log(h instanceof Hamster);
+
+  //オブジェクトが参照しているプロトアイプを参照
+  console.log(Hamster.prototype.isPrototypeOf(h));
+  console.log(Animal.prototype.isPrototypeOf(h));
+  ```
+
+
+### 本格的な開発に備えて
+### ES2015
+
 ---
 ## Chapter6 DOMの基本
 ---
 ## Chapter7 クライアントサイドJS
 ---
 ## Chapter8 応用知識
+
+
+
+
+
+
+
+
+## はっきりさせておくべきところ
+関数リテラル、コンストラクタ
