@@ -679,9 +679,242 @@ prototypeの継承については、以下の通り。
   console.log(Animal.prototype.isPrototypeOf(h));
   ```
 
-
 ### 本格的な開発に備えて
+#### メンバーのprivate化
+privateな変数はvarで定義
+そこへのgetter/setterはコンストラクタとして定義
+コンストラクタが定義時のコンテキストでvarで定義した変数を参照することにより、
+それらが生き続けられるニュアンス
+  ```js
+  function Triangle(){
+    // privateメンバーはthisじゃなくてvarで定義
+    var _base;
+    var _height;
+    var _checkArgs = function(val){
+      return (typeof val === 'number' && val > 0);
+    }
+
+    // privateメンバーにアクセスできるのは、コンストラクタ内に定義した特権メソッドのみ
+    // これはfunctionの入れ子なので、要はクロージャーである。
+    // 特権メソッドが定義時のコンテキストに則り、privateメンバーを参照しているので
+    // いい感じになった
+    this.setBase = function(base){
+      if(_checkArgs(base)){
+        _base = base;
+      }
+    }
+    this.getBase = function(){
+      return _base;
+    }
+    this.setHeight = function(height){
+      if(_checkArgs(height)){
+        _height = height;
+      }
+    }
+    this.getHeight = function(){
+      return _height
+    }
+  }
+  ```
+でも上記だとひじょうに煩雑なので、ObjectにdefinePropertyメソッドと言うものがある
+これを活用すると、変数ライクな参照が可能になる
+```js
+function Triangle(){
+  var _base;
+  var _height;
+
+  Object.defineProperty(
+    this,
+    'base',
+    {
+      get: function(){
+        return _base;
+      },
+      set: function(base){
+        if(typeof base === 'number' && base > 0){
+          _base = base
+        }
+      }
+    }
+  );
+  
+  Object.defineProperty(
+    this,
+    'height',
+    {
+      get: function(){
+        return _height;
+      },
+      set: function(height){
+        if(typeof height === 'number' && height > 0){
+          _height = height;
+        }
+      }
+    }
+  );
+};
+Triangle.prototype.getArea = function(){
+  return this.base * this.height / 2;
+}
+var t = new Triangle();
+// 変数ライクに処理ができる
+t.base = 10;
+t.height = 2;
+console.log(t.base);
+console.log(t.height);
+console.log(t.getArea());
+```
+propertyが2つくらいだとわからないけど、Onject.definePropertiesという
+メソッドもあり
+```js
+function Triangle(){
+  var _base;
+  var _height;
+
+  Object.defineProperties(this,{
+    base: {
+      get: function(){
+        return _base;
+      },
+      set: function(base){
+        if(typeof base === 'number' && base > 0){
+          _base = base;
+        }
+      } 
+    },
+    height: {
+      get:function(){
+        return _height;
+      },
+      set: function(height){
+        if(typeof height === 'number' && height > 0){
+          _height = height
+        }
+      }
+    }
+  });
+}
+Triangle.prototype.getArea = function(){
+  return this.base * this.height / 2; 
+}
+var t = new Triangle();
+t.base = 10;
+t.height = 2;
+console.log(t.base);
+console.log(t.height);
+console.log(t.getArea());
+```
+Rubyのmoduleよろしく、namespace用途にも使える
+```js
+var Wings = Wings || {};
+
+Wings.Member = function(firstName, lastName){
+  this.firstName = firstName;
+  this.lastName = lastName;
+};
+Wings.Member.prototype = {
+  getName : function(){
+    return this.lastName + ' ' + this.firstName;
+  }
+};
+var mem = new Wings.Member('Miyamoto','Yoko');
+console.log(mem.getName());
+```
 ### ES2015
+今までのが全部無駄になるES6のスーパー記法たち！
+#### クラスの基本記法
+内部実装は以前のfunctionベースだけど、
+けっこう普通のクラス　ライクになってきている
+```js
+class クラス名{
+  constructor(初期化変数1,初期化変数2,...){
+    this.初期化変数1 = 初期化変数1
+    this.初期化変数2 = 初期化変数2
+  }
+  get function(){
+    return this.インスタンス変数
+  }
+  set function(value){
+    this.インスタンス変数 = value
+  }
+  static クラスメソッド(){
+    処理
+  }
+}
+```
+#### 継承
+extendsメソッドで継承
+superで参照
+```js
+class BusinessMember extends Member{
+  constructor(var1,var2,var3){
+    super(var1,var2) //<=必ず先頭で
+    this.var3 = var3
+  }
+  overrideするメソッド(){
+    return super.親のメソッド() + ....
+  }
+  独自のメソッド(){
+    return this.getName() + 'is working'
+  }
+}
+```
+#### オブジェクトリテラル
+key,valueが同一なら省略可能になった
+
+#### moduleの機能
+定義元
+```js
+module.exports =class Member {
+  ...処理
+}
+```
+
+呼び出し側
+```js
+const Member = require('./5_5_5_module_export.js');
+```
+node: module.exports => require 'path'
+ES6: export => import * from 'path'
+nodeでimportするのはv12以降か？
+
+#### Iteraterとgenerater
+Iterater
+```js
+class MyIterater{
+  constructor(data){
+    this.data = data
+  }
+  [Symbol.iterator](){
+    let current = 0;
+    let that = this;
+    return {
+      next(){
+        return current < that.data.length?
+        {value: that.data[current++], done: false}:
+        {done:true}
+      }
+    }
+  }
+}
+```
+generater
+- function*
+- yieldで出力
+```js
+function* myGenerator(){
+  yield 'aiueo';
+  yield 'kakikukeko';
+  yield 'sasisuseso';
+}
+for(let t of myGenerator()){
+  console.log(t);  
+}
+```
+#### Proxyは代理
+```js
+
+```
 
 ---
 ## Chapter6 DOMの基本
