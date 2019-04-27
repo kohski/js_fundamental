@@ -1029,6 +1029,16 @@ document.getElementById('btn').addEventListener('click',function(event){
 
 ---
 ## Chapter7 クライアントサイドJS
+### ブラウザオブジェクト
+
+
+
+### デバッグ情報
+### ユーザーデータの保存
+### Ajax
+### promise
+### バックグラウンド実行
+
 ---
 ## Chapter8 応用知識
 
