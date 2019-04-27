@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded',function(){
     let url = document.getElementById('url');
 
     // document.createElement(タグ名)でDOMを生成
-    // reciever.属性で必要な属性をついかしていくイメージｓ
+    // reciever.属性で必要な属性をついかしていくイメージ
     let anchor = document.createElement('a');
     anchor.href = url.value;
     // 上記コードは以下でも書き換え可能

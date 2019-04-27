@@ -915,9 +915,118 @@ for(let t of myGenerator()){
 ```js
 
 ```
-
 ---
 ## Chapter6 DOMの基本
+### DOMの基本
+#### document.
+- getElementById
+- getElementsByTagName
+- getElementsByName
+- getElementsByClassName
+#### childNodes
+で子ノードの配列を取得できる
+#### nodeType
+でノードの種別を取得
+- 1 => 要素
+- 2 => Attribute
+など
+#### イベントハンドラ/イベントリスナーについて
+定義方法は以下の3つ
+1. イベントハンドラ1
+  - HTML: <input type="button" onclick="JSの関数" >
+  - JS  : 関数名の処理を追加。js内では特に呼び出し処理は不要
+2. イベントハンドラ2
+  - HTML: <input id="btn" type="button">
+  - JS  : document.getElementById('btn').onclick= function()
+3. addEventListener
+  - HTML: <input id="btn" type="bnutton">
+  - JS  : document.getElementById('btn').addEveneListener('click',function(){
+    処理
+  })
+
+### Attribute/Textの取得
+  #### attributesで一斉取得
+  ```js
+  document.addEventListener('DOMContentLoaded',function(){
+    let logo = document.getElementById('exp2')
+    let attrs = logo.attributes;
+    for(var i = 0; i < attrs.length; i++){
+      let attr = attrs[i];
+      console.log(attr.name + ':' + attr.value);
+    }
+  },false)
+  ```
+  #### innnerHTML/textContent
+  innerHTMLはXSS攻撃の脆弱性があるので注意
+  textContentを優先的に使う
+  
+### formへのアクセス
+- input\[radio\]
+- input\[checkbox\]
+- select>option
+- fileObject
+- Textの中身
+- binaryFile
+などなどを学習！
+
+### add/replace/delete nodes
+#### イメージの追加
+- elm = createElement('タグ名')で追加
+- elm.属性 = 値
+- createTextNode
+で追加していくイメージ
+追加場所は
+- appendChild
+- insertBefore
+で進める
+ちくいち描画しているとコストが高いので、
+- document.createDocumentFragmentも有効
+#### replace
+replaceChild(after, before)
+
+#### delete
+removeChild(要素)
+
+### style sheet controll
+#### inline style
+上記の属性のセットでOK
+
+#### stylesheet
+classNameのadd/removeで対応
+classlist.foggleと言うメソッドもあり
+
+### high level event listener
+#### eventの削除
+- event_handlerの場合 => btn.onclick= null;
+- event_listenerの場合 => btn.removeEventListener('click',listener,false)
+#### eventObject
+イベントリスナーのコールバック関数の引数として渡される。
+e.target.nodeName
+e.target.id
+など有料情報多数
+document.getElementById('btn').addEventListener('click',function(event){
+  eventをつかう!
+})
+主要なものとして、
+- screenX / Y
+- page X / Y
+- offsetX / Y
+
+#### イベントの伝播
+- キャプチャフェーズ
+- ターゲットフェーズ
+- バブリングフェーズ
+がある。
+バブリングのところでどうするか...
+- event.stopPropagation(); #=> 自分の階層で止まる
+- event.stopImmediatePropagation(); #=> 自分のイベントで止まる
+- event.prevent(); #=>本来のイベントを止める
+
+#### thisのスコープ
+- bind(オブジェクト)でthisを固定
+- オブジェクト内でhandleEvent属性でイベント定義。定義時のthisは同一
+- arrow関数でthisを透過
+
 ---
 ## Chapter7 クライアントサイドJS
 ---

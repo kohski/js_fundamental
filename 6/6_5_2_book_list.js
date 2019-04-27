@@ -19,5 +19,5 @@ document.addEventListener('DOMContentLoaded',function(){
     // list.appendChild(li);
     frag.appendChild(li);
   }
-  list.ssappendChild(frag);
+  list.appendChild(frag);
 })
