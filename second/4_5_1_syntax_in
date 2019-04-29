@@ -1,0 +1,3 @@
+function getTriangle(a, b=a ){
+  return a * b;
+}
