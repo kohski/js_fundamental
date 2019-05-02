@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Document</title>
+</head>
+<body>
+  <!-- よびだし1 onclick属性にjs関数名 -->
+  <!-- 同名メソッドが複数にある場合は、呼び出し順序に則る -->
+  <input type="button" value="dialog display 1" onclick="btn_click()">
+
+  <!-- inlineの呼び出し -->
+  <input type="button" value="dialog display 2" onclick="window.alert('inline method')">
+
+  <input type="button" value="dialog display 3" id="btn">
+
+
+  <script src="./6_1_2_event_type.js"></script>
+  <script src="./6_1_2_test.js"></script>
+</body>
+</html>
